@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lottery DApp</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.36/dist/web3.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>🎲 Welcome to the Lottery DApp! 🎲</h1>
+    </header>
+
+    <div class="container">
+        <section class="lottery-info">
+            <h2>Lottery Status</h2>
+            <p><strong>Manager:</strong> <span id="manager">Loading...</span></p>
+            <p><strong>Number of Players:</strong> <span id="players">Loading...</span></p>
+            <p><strong>Total Pool:</strong> <span id="balance">Loading...</span> Ether</p>
+        </section>
+
+        <section class="enter-lottery">
+            <h2>Join the Lottery</h2>
+            <p>Enter a value to join the lottery:</p>
+            <input type="text" id="amount" placeholder="Enter Ether amount">
+            <button onclick="enterLottery()">Enter Lottery</button>
+        </section>
+
+        <section class="pick-winner">
+            <h2>Pick a Winner</h2>
+            <button onclick="pickWinner()">Pick Winner</button>
+        </section>
+    </div>
+
+    <footer>
+        <p>Powered by Ethereum & Web3.js</p>
+    </footer>
+
+    <script>
+        // Initialize Web3
+        let web3;
+        let contract;
+        const contractAddress = "TON_CONTRACT_ADDRESS_ICI";  // Remplacer par l'adresse déployée
+        const contractABI = [
+            // Copier et coller l'ABI ici après déploiement du contrat
+        ];
+
+        if (window.ethereum) {
+            web3 = new Web3(window.ethereum);
+            window.ethereum.enable().catch(error => {
+                console.log("User denied account access");
+            });
+        } else if (window.web3) {
+            web3 = new Web3(web3.currentProvider);
+        } else {
+            console.log("Non-Ethereum browser detected. You should consider trying MetaMask!");
+        }
+
+        contract = new web3.eth.Contract(contractABI, contractAddress);
+
+        // Get the manager's address
+        async function getManager() {
+            const manager = await contract.methods.manager().call();
+            document.getElementById("manager").innerText = manager;
+        }
+
+        // Get the players and pool balance
+        async function getPlayersAndBalance() {
+            const players = await contract.methods.getPlayers().call();
+            const balance = await web3.eth.getBalance(contractAddress);
+
+            document.getElementById("players").innerText = players.length;
+            document.getElementById("balance").innerText = web3.utils.fromWei(balance, 'ether');
+        }
+
+        // Enter the lottery
+        async function enterLottery() {
+            const accounts = await web3.eth.getAccounts();
+            const amount = document.getElementById("amount").value;
+
+            await contract.methods.enter().send({
+                from: accounts[0],
+                value: web3.utils.toWei(amount, 'ether')
+            });
+
+            getPlayersAndBalance();  // Update players and balance after entering
+        }
+
+        // Pick the winner
+        async function pickWinner() {
+            const accounts = await web3.eth.getAccounts();
+            await contract.methods.pickWinner().send({
+                from: accounts[0]
+            });
+
+            getPlayersAndBalance();  // Update after picking winner
+        }
+
+        // Load manager, players and balance when page loads
+        window.onload = async () => {
+            await getManager();
+            await getPlayersAndBalance();
+        }
+    </script>
+</body>
+</html>
